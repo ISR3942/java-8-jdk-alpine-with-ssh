@@ -1,15 +1,13 @@
-FROM openjdk:8u252-jdk
-
-RUN apt update && apt install openssh-server -y
-
-RUN echo "root:Docker!" | chpasswd 
-
-COPY app.jar /home/site/wwwroot/
-
-COPY init.sh /home/
-
+FROM java:8-jdk-alpine
+ENV SSH_PORT 2222
 COPY sshd_config /etc/ssh/
+COPY init.sh /opt/startup/init.sh
+COPY app.jar /home/site/wwwroot/app.jar
 
-WORKDIR /home/site/wwwroot
-EXPOSE 8080 2222
-ENTRYPOINT /home/init.sh
+RUN apk add --update openssh bash openrc \
+	&& openrc \
+	&& echo "root:Docker!" | chpasswd \
+	&& chmod 755 /opt/startup/init.sh
+
+EXPOSE 2222 80
+ENTRYPOINT ["/opt/startup/init.sh"]
